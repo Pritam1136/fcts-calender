@@ -53,7 +53,7 @@ async function fetchEventsAndSendEmails() {
 
   for (const eventDoc of eventsSnapshot.docs) {
     const eventData = eventDoc.data();
-    const { type, name, startDate, endDate, createdBy } = eventData;
+    const { type, name, startDate, endDate } = eventData;
 
     // Check if 'type' is a Firestore reference
     let eventTypeDoc;
