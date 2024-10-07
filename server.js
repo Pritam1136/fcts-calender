@@ -7,10 +7,7 @@ import { getFirestore, collection, getDocs } from "firebase/firestore";
 
 const app = express();
 const port = 5000;
-let usersToEmail = [];
-
 dotenv.config();
-
 app.use(express.json());
 
 const firebaseConfig = {
@@ -24,11 +21,9 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
   auth: {
     user: process.env.EMAIL_USERNAME,
     pass: process.env.EMAIL_PASSWORD,
@@ -37,10 +32,10 @@ const transporter = nodemailer.createTransport({
 
 async function sendEmail(to, subject, text) {
   const mailOptions = {
-    from: process.env.EMAIL_USERNAME, // Use environment variable for sender email
-    to: to,
-    subject: subject,
-    text: text,
+    from: process.env.EMAIL_USERNAME,
+    to,
+    subject,
+    text,
   };
 
   try {
@@ -52,33 +47,35 @@ async function sendEmail(to, subject, text) {
 }
 
 async function fetchEventsAndSendEmails() {
-  const querySnapshot = await getDocs(collection(db, "Events"));
-
-  querySnapshot?.forEach(async (doc) => {
-    const eventData = doc.data();
-    const { eventType, Event, User, selectedUser } = eventData;
-
-    if (selectedUser && selectedUser.length > 0) {
-      usersToEmail = selectedUser;
-    } else {
-      usersToEmail = User;
+  try {
+    const querySnapshot = await getDocs(collection(db, "Events"));
+    if (querySnapshot.empty) {
+      console.warn("No events found in the collection.");
+      return;
     }
 
-    // Log the users to email for debugging
-    console.log("Users to email:", usersToEmail);
+    for (const doc of querySnapshot.docs) {
+      const eventData = doc.data();
+      const { eventType, Event, User, selectedUser } = eventData;
 
-    if (usersToEmail && usersToEmail.length > 0) {
-      usersToEmail.forEach(async (userEmail) => {
-        const emailContent = `Event Type: ${eventType}\nEvent: ${Event}`;
-        await sendEmail(userEmail, "Event Notification", emailContent);
-      });
-    } else {
-      console.warn("No valid users to email.");
+      const usersToEmail =
+        selectedUser && selectedUser.length > 0 ? selectedUser : User;
+
+      if (usersToEmail && usersToEmail.length > 0) {
+        for (const userEmail of usersToEmail) {
+          const emailContent = `Event Type: ${eventType}\nEvent: ${Event}`;
+          await sendEmail(userEmail, "Event Notification", emailContent);
+        }
+      } else {
+        console.warn("No valid users to email.");
+      }
     }
-  });
+  } catch (error) {
+    console.error("Error fetching events:", error);
+  }
 }
 
-// Schedule a cron job to run every minute (adjust as needed)
+// Schedule a cron job to run every day at 8:00 AM
 cron.schedule("0 8 * * *", () => {
   console.log("Running daily cron job to check events and send emails.");
   fetchEventsAndSendEmails();
