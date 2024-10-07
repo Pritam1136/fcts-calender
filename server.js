@@ -2,32 +2,22 @@ import express from "express";
 import cron from "node-cron";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-import { initializeApp } from "firebase/app";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  doc,
-  getDoc,
-} from "firebase/firestore";
+import admin from "firebase-admin";
+import serviceAccount from "./fcts-calender.json" assert { type: "json" };
 
 const app = express();
 const port = 5000;
+
 dotenv.config();
 app.use(express.json());
 
-const firebaseConfig = {
-  apiKey: process.env.API_KEY,
-  authDomain: process.env.AUTH_DOMAIN,
-  projectId: process.env.PROJECT_ID,
-  storageBucket: process.env.STORAGE_BUCKET,
-  messagingSenderId: process.env.MESSAGING_SENDER_ID,
-  appId: process.env.APP_ID,
-};
+// Initialize Firebase Admin SDK
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://fcts-calendar-tool.firebaseio.com",
+});
 
-// Initialize Firebase and Firestore
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
+const db = admin.firestore(); // Firestore using Firebase Admin
 
 // Nodemailer transporter setup
 const transporter = nodemailer.createTransport({
@@ -58,22 +48,27 @@ async function sendEmail(to, subject, text) {
   }
 }
 
-// Function to fetch event details, user emails, and send notifications
 async function fetchEventsAndSendEmails() {
-  const eventsSnapshot = await getDocs(collection(db, "Events"));
+  const eventsSnapshot = await db.collection("Events").get();
 
   for (const eventDoc of eventsSnapshot.docs) {
     const eventData = eventDoc.data();
     const { type, name, startDate, endDate, createdBy } = eventData;
 
-    // Get EventType details from EventTypes collection
-    const eventTypeDoc = await getDoc(
-      doc(db, "EventTypes", type.split("/").pop())
-    );
-    const eventTypeData = eventTypeDoc.exists() ? eventTypeDoc.data() : {};
+    // Check if 'type' is a Firestore reference
+    let eventTypeDoc;
+    if (type && type.id) {
+      // 'type' is a Firestore reference, get its ID and fetch EventType details
+      eventTypeDoc = await db.collection("EventTypes").doc(type.id).get();
+    } else {
+      console.error("Invalid event type or reference:", type);
+      continue; // Skip to the next event if there's an issue with 'type'
+    }
+
+    const eventTypeData = eventTypeDoc.exists ? eventTypeDoc.data() : {};
 
     // Fetch users for the event
-    const usersSnapshot = await getDocs(collection(db, "Users"));
+    const usersSnapshot = await db.collection("Users").get();
     const usersToEmail = usersSnapshot.docs
       .map((userDoc) => {
         const userData = userDoc.data();
