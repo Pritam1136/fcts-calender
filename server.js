@@ -76,7 +76,7 @@ async function fetchEventsAndSendEmails() {
 }
 
 // Schedule a cron job to run every day at 8:00 AM
-cron.schedule("0 8 * * *", () => {
+cron.schedule(" 0 8 * * * ", () => {
   console.log("Running daily cron job to check events and send emails.");
   fetchEventsAndSendEmails();
 });
