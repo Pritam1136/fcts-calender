@@ -7,6 +7,7 @@ import { getFirestore, collection, getDocs } from "firebase/firestore";
 
 const app = express();
 const port = 5000;
+let usersToEmail = [];
 
 dotenv.config();
 
@@ -23,7 +24,6 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
-
 const transporter = nodemailer.createTransport({
   service: "gmail",
   host: "smtp.gmail.com",
@@ -37,7 +37,7 @@ const transporter = nodemailer.createTransport({
 
 async function sendEmail(to, subject, text) {
   const mailOptions = {
-    from: "pritamroy1136@gmail.com",
+    from: process.env.EMAIL_USERNAME, // Use environment variable for sender email
     to: to,
     subject: subject,
     text: text,
@@ -54,11 +54,9 @@ async function sendEmail(to, subject, text) {
 async function fetchEventsAndSendEmails() {
   const querySnapshot = await getDocs(collection(db, "Events"));
 
-  querySnapshot.forEach(async (doc) => {
+  querySnapshot?.forEach(async (doc) => {
     const eventData = doc.data();
     const { eventType, Event, User, selectedUser } = eventData;
-
-    let usersToEmail = [];
 
     if (selectedUser && selectedUser.length > 0) {
       usersToEmail = selectedUser;
@@ -66,14 +64,22 @@ async function fetchEventsAndSendEmails() {
       usersToEmail = User;
     }
 
-    usersToEmail?.forEach(async (userEmail) => {
-      const emailContent = `Event Type: ${eventType}\nEvent: ${Event}`;
-      await sendEmail(userEmail, "Event Notification", emailContent);
-    });
+    // Log the users to email for debugging
+    console.log("Users to email:", usersToEmail);
+
+    if (usersToEmail && usersToEmail.length > 0) {
+      usersToEmail.forEach(async (userEmail) => {
+        const emailContent = `Event Type: ${eventType}\nEvent: ${Event}`;
+        await sendEmail(userEmail, "Event Notification", emailContent);
+      });
+    } else {
+      console.warn("No valid users to email.");
+    }
   });
 }
 
-cron.schedule("0 8 * * *", () => {
+// Schedule a cron job to run every minute (adjust as needed)
+cron.schedule("* * * * *", () => {
   console.log("Running daily cron job to check events and send emails.");
   fetchEventsAndSendEmails();
 });
