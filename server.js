@@ -29,7 +29,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-
 async function sendEmail(to, subject, text) {
   const mailOptions = {
     from: process.env.EMAIL_USERNAME,
@@ -46,12 +45,31 @@ async function sendEmail(to, subject, text) {
   }
 }
 
+// Helper function to check if a given date is tomorrow
+function isEventTomorrow(startDate) {
+  const eventDate = new Date(startDate);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  return (
+    eventDate.getDate() === tomorrow.getDate() &&
+    eventDate.getMonth() === tomorrow.getMonth() &&
+    eventDate.getFullYear() === tomorrow.getFullYear()
+  );
+}
+
 async function fetchEventsAndSendEmails() {
   const eventsSnapshot = await db.collection("Events").get();
 
   for (const eventDoc of eventsSnapshot.docs) {
     const eventData = eventDoc.data();
-    const { type, name, startDate, endDate } = eventData;
+    const { type, name, startDate, endDate, selectedUser } = eventData;
+
+    // Check if the event is happening tomorrow
+    if (!isEventTomorrow(startDate)) {
+      console.log(`Skipping event: ${name}, not happening tomorrow.`);
+      continue; // Skip if the event isn't tomorrow
+    }
 
     let eventTypeDoc;
     if (type && type.id) {
@@ -63,18 +81,44 @@ async function fetchEventsAndSendEmails() {
 
     const eventTypeData = eventTypeDoc.exists ? eventTypeDoc.data() : {};
 
-    const usersSnapshot = await db.collection("Users").get();
-    const usersToEmail = usersSnapshot.docs
-      .map((userDoc) => {
-        const userData = userDoc.data();
-        return { email: userData.email, name: userData.name };
-      })
-      .filter((user) => !!user.email);
+    // If there's a selectedUser, email only that user
+    if (selectedUser) {
+      const selectedUserDoc = await db
+        .collection("Users")
+        .doc(selectedUser)
+        .get();
+      const userData = selectedUserDoc.exists ? selectedUserDoc.data() : null;
 
-    const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
+      if (userData && userData.email) {
+        const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
+        await sendEmail(
+          userData.email,
+          `Event Notification - ${name}`,
+          emailContent
+        );
+        console.log(`Email sent to selected user: ${userData.email}`);
+      } else {
+        console.error("Selected user not found or invalid.");
+      }
+    } else {
+      // Otherwise, email all users
+      const usersSnapshot = await db.collection("Users").get();
+      const usersToEmail = usersSnapshot.docs
+        .map((userDoc) => {
+          const userData = userDoc.data();
+          return { email: userData.email, name: userData.name };
+        })
+        .filter((user) => !!user.email);
 
-    for (const user of usersToEmail) {
-      await sendEmail(user.email, `Event Notification - ${name}`, emailContent);
+      const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
+
+      for (const user of usersToEmail) {
+        await sendEmail(
+          user.email,
+          `Event Notification - ${name}`,
+          emailContent
+        );
+      }
     }
   }
 }
