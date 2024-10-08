@@ -29,6 +29,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Function to send an email
 async function sendEmail(to, subject, text) {
   const mailOptions = {
     from: process.env.EMAIL_USERNAME,
@@ -58,8 +59,17 @@ function isEventTomorrow(startDate) {
   );
 }
 
-function isEventThisWeek(startDate) {}
+// Helper function to check if an event is within the next 7 days
+function isEventThisWeek(startDate) {
+  const eventDate = new Date(startDate);
+  const today = new Date();
+  const oneWeekFromNow = new Date();
+  oneWeekFromNow.setDate(today.getDate() + 7);
 
+  return eventDate >= today && eventDate <= oneWeekFromNow;
+}
+
+// Function to fetch daily events and send emails
 async function fetchDailyEventsAndSendEmails() {
   const eventsSnapshot = await db.collection("Events").get();
 
@@ -70,7 +80,7 @@ async function fetchDailyEventsAndSendEmails() {
     // Check if the event is happening tomorrow
     if (!isEventTomorrow(startDate)) {
       console.log(`Skipping event: ${name}, not happening tomorrow.`);
-      continue; // Skip if the event isn't tomorrow
+      continue;
     }
 
     let eventTypeDoc;
@@ -78,7 +88,7 @@ async function fetchDailyEventsAndSendEmails() {
       eventTypeDoc = await db.collection("EventTypes").doc(type.id).get();
     } else {
       console.error("Invalid event type or reference:", type);
-      continue; // Skip to the next event if there's an issue with 'type'
+      continue;
     }
 
     const eventTypeData = eventTypeDoc.exists ? eventTypeDoc.data() : {};
@@ -125,6 +135,7 @@ async function fetchDailyEventsAndSendEmails() {
   }
 }
 
+// Function to fetch weekly events and send emails
 async function fetchWeeklyEventsAndSendEmails() {
   const eventsSnapshot = await db.collection("Events").get();
 
@@ -132,10 +143,10 @@ async function fetchWeeklyEventsAndSendEmails() {
     const eventData = eventDoc.data();
     const { type, name, startDate, endDate, selectedUser } = eventData;
 
-    // Check if the event is happening tomorrow
+    // Check if the event is happening within the week
     if (!isEventThisWeek(startDate)) {
-      console.log(`Skipping event: ${name}, not happening tomorrow.`);
-      continue; // Skip if the event isn't tomorrow
+      console.log(`Skipping event: ${name}, not happening this week.`);
+      continue;
     }
 
     let eventTypeDoc;
@@ -143,7 +154,7 @@ async function fetchWeeklyEventsAndSendEmails() {
       eventTypeDoc = await db.collection("EventTypes").doc(type.id).get();
     } else {
       console.error("Invalid event type or reference:", type);
-      continue; // Skip to the next event if there's an issue with 'type'
+      continue;
     }
 
     const eventTypeData = eventTypeDoc.exists ? eventTypeDoc.data() : {};
@@ -190,13 +201,13 @@ async function fetchWeeklyEventsAndSendEmails() {
   }
 }
 
-// Schedule the cron job to run daily at 8 AM
+// Schedule the cron job to run daily at 8 AM for daily events
 cron.schedule("0 8 * * *", () => {
   console.log("Running daily cron job to check events and send emails.");
   fetchDailyEventsAndSendEmails();
 });
 
-// Schedule the cron job to run daily at 7:30 AM at Sun
+// Schedule the cron job to run every Sunday at 7:30 AM for weekly events
 cron.schedule("30 7 * * Sun", () => {
   console.log("Running weekly cron job to check events and send emails.");
   fetchWeeklyEventsAndSendEmails();
