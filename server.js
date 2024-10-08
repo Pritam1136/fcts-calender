@@ -48,9 +48,10 @@ async function sendEmail(to, subject, text) {
 
 // Helper function to check if a given date is tomorrow
 function isEventTomorrow(startDate) {
-  const eventDate = new Date(startDate);
+  const eventDate = startDate.toDate ? startDate.toDate() : new Date(startDate);
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0); // Ensure accurate comparison to day
 
   return (
     eventDate.getDate() === tomorrow.getDate() &&
@@ -61,7 +62,7 @@ function isEventTomorrow(startDate) {
 
 // Helper function to check if an event is within the next 7 days
 function isEventThisWeek(startDate) {
-  const eventDate = new Date(startDate);
+  const eventDate = startDate.toDate ? startDate.toDate() : new Date(startDate);
   const today = new Date();
   const oneWeekFromNow = new Date();
   oneWeekFromNow.setDate(today.getDate() + 7);
@@ -84,8 +85,9 @@ async function fetchDailyEventsAndSendEmails() {
     }
 
     let eventTypeDoc;
-    if (type && type.id) {
-      eventTypeDoc = await db.collection("EventTypes").doc(type.id).get();
+    if (type && typeof type === "string") {
+      const typeId = type.split("/")[2];
+      eventTypeDoc = await db.collection("EventTypes").doc(typeId).get();
     } else {
       console.error("Invalid event type or reference:", type);
       continue;
@@ -93,24 +95,24 @@ async function fetchDailyEventsAndSendEmails() {
 
     const eventTypeData = eventTypeDoc.exists ? eventTypeDoc.data() : {};
 
-    // If there's a selectedUser, email only that user
-    if (selectedUser) {
-      const selectedUserDoc = await db
-        .collection("Users")
-        .doc(selectedUser)
-        .get();
-      const userData = selectedUserDoc.exists ? selectedUserDoc.data() : null;
+    // If there's a selectedUser array, email only those users
+    if (Array.isArray(selectedUser) && selectedUser.length > 0) {
+      for (let userRef of selectedUser) {
+        const userId = userRef.split("/")[2];
+        const userDoc = await db.collection("Users").doc(userId).get();
+        const userData = userDoc.exists ? userDoc.data() : null;
 
-      if (userData && userData.email) {
-        const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
-        await sendEmail(
-          userData.email,
-          `Event Notification - ${name}`,
-          emailContent
-        );
-        console.log(`Email sent to selected user: ${userData.email}`);
-      } else {
-        console.error("Selected user not found or invalid.");
+        if (userData && userData.email) {
+          const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
+          await sendEmail(
+            userData.email,
+            `Event Notification - ${name}`,
+            emailContent
+          );
+          console.log(`Email sent to selected user: ${userData.email}`);
+        } else {
+          console.error("Selected user not found or invalid.");
+        }
       }
     } else {
       // Otherwise, email all users
@@ -150,8 +152,9 @@ async function fetchWeeklyEventsAndSendEmails() {
     }
 
     let eventTypeDoc;
-    if (type && type.id) {
-      eventTypeDoc = await db.collection("EventTypes").doc(type.id).get();
+    if (type && typeof type === "string") {
+      const typeId = type.split("/")[2];
+      eventTypeDoc = await db.collection("EventTypes").doc(typeId).get();
     } else {
       console.error("Invalid event type or reference:", type);
       continue;
@@ -159,24 +162,24 @@ async function fetchWeeklyEventsAndSendEmails() {
 
     const eventTypeData = eventTypeDoc.exists ? eventTypeDoc.data() : {};
 
-    // If there's a selectedUser, email only that user
-    if (selectedUser) {
-      const selectedUserDoc = await db
-        .collection("Users")
-        .doc(selectedUser)
-        .get();
-      const userData = selectedUserDoc.exists ? selectedUserDoc.data() : null;
+    // If there's a selectedUser array, email only those users
+    if (Array.isArray(selectedUser) && selectedUser.length > 0) {
+      for (let userRef of selectedUser) {
+        const userId = userRef.split("/")[2];
+        const userDoc = await db.collection("Users").doc(userId).get();
+        const userData = userDoc.exists ? userDoc.data() : null;
 
-      if (userData && userData.email) {
-        const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
-        await sendEmail(
-          userData.email,
-          `Event Notification - ${name}`,
-          emailContent
-        );
-        console.log(`Email sent to selected user: ${userData.email}`);
-      } else {
-        console.error("Selected user not found or invalid.");
+        if (userData && userData.email) {
+          const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
+          await sendEmail(
+            userData.email,
+            `Event Notification - ${name}`,
+            emailContent
+          );
+          console.log(`Email sent to selected user: ${userData.email}`);
+        } else {
+          console.error("Selected user not found or invalid.");
+        }
       }
     } else {
       // Otherwise, email all users
