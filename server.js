@@ -58,7 +58,9 @@ function isEventTomorrow(startDate) {
   );
 }
 
-async function fetchEventsAndSendEmails() {
+function isEventThisWeek(startDate) {}
+
+async function fetchDailyEventsAndSendEmails() {
   const eventsSnapshot = await db.collection("Events").get();
 
   for (const eventDoc of eventsSnapshot.docs) {
@@ -123,10 +125,81 @@ async function fetchEventsAndSendEmails() {
   }
 }
 
+async function fetchWeeklyEventsAndSendEmails() {
+  const eventsSnapshot = await db.collection("Events").get();
+
+  for (const eventDoc of eventsSnapshot.docs) {
+    const eventData = eventDoc.data();
+    const { type, name, startDate, endDate, selectedUser } = eventData;
+
+    // Check if the event is happening tomorrow
+    if (!isEventThisWeek(startDate)) {
+      console.log(`Skipping event: ${name}, not happening tomorrow.`);
+      continue; // Skip if the event isn't tomorrow
+    }
+
+    let eventTypeDoc;
+    if (type && type.id) {
+      eventTypeDoc = await db.collection("EventTypes").doc(type.id).get();
+    } else {
+      console.error("Invalid event type or reference:", type);
+      continue; // Skip to the next event if there's an issue with 'type'
+    }
+
+    const eventTypeData = eventTypeDoc.exists ? eventTypeDoc.data() : {};
+
+    // If there's a selectedUser, email only that user
+    if (selectedUser) {
+      const selectedUserDoc = await db
+        .collection("Users")
+        .doc(selectedUser)
+        .get();
+      const userData = selectedUserDoc.exists ? selectedUserDoc.data() : null;
+
+      if (userData && userData.email) {
+        const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
+        await sendEmail(
+          userData.email,
+          `Event Notification - ${name}`,
+          emailContent
+        );
+        console.log(`Email sent to selected user: ${userData.email}`);
+      } else {
+        console.error("Selected user not found or invalid.");
+      }
+    } else {
+      // Otherwise, email all users
+      const usersSnapshot = await db.collection("Users").get();
+      const usersToEmail = usersSnapshot.docs
+        .map((userDoc) => {
+          const userData = userDoc.data();
+          return { email: userData.email, name: userData.name };
+        })
+        .filter((user) => !!user.email);
+
+      const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
+
+      for (const user of usersToEmail) {
+        await sendEmail(
+          user.email,
+          `Event Notification - ${name}`,
+          emailContent
+        );
+      }
+    }
+  }
+}
+
 // Schedule the cron job to run daily at 8 AM
 cron.schedule("0 8 * * *", () => {
   console.log("Running daily cron job to check events and send emails.");
-  fetchEventsAndSendEmails();
+  fetchDailyEventsAndSendEmails();
+});
+
+// Schedule the cron job to run daily at 7:30 AM at Sun
+cron.schedule("30 7 * * Sun", () => {
+  console.log("Running weekly cron job to check events and send emails.");
+  fetchWeeklyEventsAndSendEmails();
 });
 
 app.listen(port, () => {
