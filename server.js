@@ -11,15 +11,13 @@ const port = 5000;
 dotenv.config();
 app.use(express.json());
 
-// Initialize Firebase Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://fcts-calendar-tool.firebaseio.com",
 });
 
-const db = admin.firestore(); // Firestore using Firebase Admin
+const db = admin.firestore();
 
-// Nodemailer transporter setup
 const transporter = nodemailer.createTransport({
   service: "gmail",
   host: "smtp.gmail.com",
@@ -31,7 +29,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Function to send emails
+
 async function sendEmail(to, subject, text) {
   const mailOptions = {
     from: process.env.EMAIL_USERNAME,
@@ -55,10 +53,8 @@ async function fetchEventsAndSendEmails() {
     const eventData = eventDoc.data();
     const { type, name, startDate, endDate } = eventData;
 
-    // Check if 'type' is a Firestore reference
     let eventTypeDoc;
     if (type && type.id) {
-      // 'type' is a Firestore reference, get its ID and fetch EventType details
       eventTypeDoc = await db.collection("EventTypes").doc(type.id).get();
     } else {
       console.error("Invalid event type or reference:", type);
@@ -67,26 +63,23 @@ async function fetchEventsAndSendEmails() {
 
     const eventTypeData = eventTypeDoc.exists ? eventTypeDoc.data() : {};
 
-    // Fetch users for the event
     const usersSnapshot = await db.collection("Users").get();
     const usersToEmail = usersSnapshot.docs
       .map((userDoc) => {
         const userData = userDoc.data();
         return { email: userData.email, name: userData.name };
       })
-      .filter((user) => !!user.email); // Ensure users have valid emails
+      .filter((user) => !!user.email);
 
-    // Prepare the email content
     const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
 
-    // Send emails to all selected users
     for (const user of usersToEmail) {
       await sendEmail(user.email, `Event Notification - ${name}`, emailContent);
     }
   }
 }
 
-// Schedule the cron job to run daily at 8 AM (adjust as needed)
+// Schedule the cron job to run daily at 8 AM
 cron.schedule("0 8 * * *", () => {
   console.log("Running daily cron job to check events and send emails.");
   fetchEventsAndSendEmails();
