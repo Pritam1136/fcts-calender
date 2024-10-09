@@ -79,10 +79,10 @@ async function fetchDailyEventsAndSendEmails() {
       continue;
     }
 
+    // Check if 'type' is a valid DocumentReference
     let eventTypeDoc;
-    if (type && typeof type === "string") {
-      const typeId = type.split("/")[2];
-      eventTypeDoc = await db.collection("EventTypes").doc(typeId).get();
+    if (type instanceof admin.firestore.DocumentReference) {
+      eventTypeDoc = await type.get();
     } else {
       console.error("Invalid event type or reference:", type);
       continue;
@@ -92,23 +92,39 @@ async function fetchDailyEventsAndSendEmails() {
 
     if (Array.isArray(selectedUser) && selectedUser.length > 0) {
       for (let userRef of selectedUser) {
-        const userId = userRef.split("/")[2];
-        const userDoc = await db.collection("Users").doc(userId).get();
-        const userData = userDoc.exists ? userDoc.data() : null;
+        if (typeof userRef === "string") {
+          const userId = userRef.split("/")[2];
+          if (!userId) {
+            if (typeof userRef === "object") {
+              console.error(
+                "Invalid user reference:",
+                JSON.stringify(userRef, null, 2)
+              );
+            } else {
+              console.error("Invalid user reference type:", typeof userRef);
+            }
+            continue;
+          }
+          const userDoc = await db.collection("Users").doc(userId).get();
+          const userData = userDoc.exists ? userDoc.data() : null;
 
-        if (userData && userData.email) {
-          const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
-          await sendEmail(
-            userData.email,
-            `Event Notification - ${name}`,
-            emailContent
-          );
-          console.log(`Email sent to selected user: ${userData.email}`);
+          if (userData && userData.email) {
+            const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
+            await sendEmail(
+              userData.email,
+              `Event Notification - ${name}`,
+              emailContent
+            );
+            console.log(`Email sent to selected user: ${userData.email}`);
+          } else {
+            console.error("Selected user not found or invalid.");
+          }
         } else {
-          console.error("Selected user not found or invalid.");
+          console.error("Invalid user reference type:", typeof userRef);
         }
       }
     } else {
+      // Send email to all users if no specific users are selected
       const usersSnapshot = await db.collection("Users").get();
       const usersToEmail = usersSnapshot.docs
         .map((userDoc) => {
@@ -143,24 +159,34 @@ async function fetchWeeklyEventsAndSendEmails() {
     }
 
     let eventTypeDoc;
+
     if (type && typeof type === "string") {
-      const typeId = type.split("/")[2];
+      const typeId = type?.id;
+
+      // Fetch the event type data
       eventTypeDoc = await db.collection("EventTypes").doc(typeId).get();
     } else {
       console.error("Invalid event type or reference:", type);
       continue;
     }
 
-    const eventTypeData = eventTypeDoc.exists ? eventTypeDoc.data() : {};
+    const eventTypeData = eventTypeDoc.exists() ? eventTypeDoc.data() : {};
 
-    if (Array.isArray(selectedUser) && selectedUser.length > 0) {
+    if (selectedUser.length > 0) {
+      console.log("searched for selected");
       for (let userRef of selectedUser) {
-        const userId = userRef.split("/")[2];
+        const userId = userRef.split("/");
+
+        if (!userId) {
+          console.error("Invalid user ID:", userRef);
+          continue;
+        }
+
         const userDoc = await db.collection("Users").doc(userId).get();
         const userData = userDoc.exists ? userDoc.data() : null;
 
         if (userData && userData.email) {
-          const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
+          const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
           await sendEmail(
             userData.email,
             `Event Notification - ${name}`,
@@ -171,34 +197,16 @@ async function fetchWeeklyEventsAndSendEmails() {
           console.error("Selected user not found or invalid.");
         }
       }
-    } else {
-      const usersSnapshot = await db.collection("Users").get();
-      const usersToEmail = usersSnapshot.docs
-        .map((userDoc) => {
-          const userData = userDoc.data();
-          return { email: userData.email, name: userData.name };
-        })
-        .filter((user) => !!user.email);
-
-      const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
-
-      for (const user of usersToEmail) {
-        await sendEmail(
-          user.email,
-          `Event Notification - ${name}`,
-          emailContent
-        );
-      }
     }
   }
 }
 
-cron.schedule("0 8 * * *", () => {
+cron.schedule("* * * * *", () => {
   console.log("Running daily cron job to check events and send emails.");
   fetchDailyEventsAndSendEmails();
 });
 
-cron.schedule("30 7 * * Sun", () => {
+cron.schedule("30 7 * * sun", () => {
   console.log("Running weekly cron job to check events and send emails.");
   fetchWeeklyEventsAndSendEmails();
 });
