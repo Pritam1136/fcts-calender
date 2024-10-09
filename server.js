@@ -29,7 +29,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Function to send an email
 async function sendEmail(to, subject, text) {
   const mailOptions = {
     from: process.env.EMAIL_USERNAME,
@@ -46,12 +45,11 @@ async function sendEmail(to, subject, text) {
   }
 }
 
-// Helper function to check if a given date is tomorrow
 function isEventTomorrow(startDate) {
   const eventDate = startDate.toDate ? startDate.toDate() : new Date(startDate);
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0); // Ensure accurate comparison to day
+  tomorrow.setHours(0, 0, 0, 0);
 
   return (
     eventDate.getDate() === tomorrow.getDate() &&
@@ -60,7 +58,6 @@ function isEventTomorrow(startDate) {
   );
 }
 
-// Helper function to check if an event is within the next 7 days
 function isEventThisWeek(startDate) {
   const eventDate = startDate.toDate ? startDate.toDate() : new Date(startDate);
   const today = new Date();
@@ -70,7 +67,6 @@ function isEventThisWeek(startDate) {
   return eventDate >= today && eventDate <= oneWeekFromNow;
 }
 
-// Function to fetch daily events and send emails
 async function fetchDailyEventsAndSendEmails() {
   const eventsSnapshot = await db.collection("Events").get();
 
@@ -78,7 +74,6 @@ async function fetchDailyEventsAndSendEmails() {
     const eventData = eventDoc.data();
     const { type, name, startDate, endDate, selectedUser } = eventData;
 
-    // Check if the event is happening tomorrow
     if (!isEventTomorrow(startDate)) {
       console.log(`Skipping event: ${name}, not happening tomorrow.`);
       continue;
@@ -95,7 +90,6 @@ async function fetchDailyEventsAndSendEmails() {
 
     const eventTypeData = eventTypeDoc.exists ? eventTypeDoc.data() : {};
 
-    // If there's a selectedUser array, email only those users
     if (Array.isArray(selectedUser) && selectedUser.length > 0) {
       for (let userRef of selectedUser) {
         const userId = userRef.split("/")[2];
@@ -115,7 +109,6 @@ async function fetchDailyEventsAndSendEmails() {
         }
       }
     } else {
-      // Otherwise, email all users
       const usersSnapshot = await db.collection("Users").get();
       const usersToEmail = usersSnapshot.docs
         .map((userDoc) => {
@@ -137,7 +130,6 @@ async function fetchDailyEventsAndSendEmails() {
   }
 }
 
-// Function to fetch weekly events and send emails
 async function fetchWeeklyEventsAndSendEmails() {
   const eventsSnapshot = await db.collection("Events").get();
 
@@ -145,7 +137,6 @@ async function fetchWeeklyEventsAndSendEmails() {
     const eventData = eventDoc.data();
     const { type, name, startDate, endDate, selectedUser } = eventData;
 
-    // Check if the event is happening within the week
     if (!isEventThisWeek(startDate)) {
       console.log(`Skipping event: ${name}, not happening this week.`);
       continue;
@@ -162,7 +153,6 @@ async function fetchWeeklyEventsAndSendEmails() {
 
     const eventTypeData = eventTypeDoc.exists ? eventTypeDoc.data() : {};
 
-    // If there's a selectedUser array, email only those users
     if (Array.isArray(selectedUser) && selectedUser.length > 0) {
       for (let userRef of selectedUser) {
         const userId = userRef.split("/")[2];
@@ -182,7 +172,6 @@ async function fetchWeeklyEventsAndSendEmails() {
         }
       }
     } else {
-      // Otherwise, email all users
       const usersSnapshot = await db.collection("Users").get();
       const usersToEmail = usersSnapshot.docs
         .map((userDoc) => {
@@ -204,13 +193,11 @@ async function fetchWeeklyEventsAndSendEmails() {
   }
 }
 
-// Schedule the cron job to run daily at 8 AM for daily events
 cron.schedule("0 8 * * *", () => {
   console.log("Running daily cron job to check events and send emails.");
   fetchDailyEventsAndSendEmails();
 });
 
-// Schedule the cron job to run every Sunday at 7:30 AM for weekly events
 cron.schedule("30 7 * * Sun", () => {
   console.log("Running weekly cron job to check events and send emails.");
   fetchWeeklyEventsAndSendEmails();
