@@ -235,7 +235,7 @@ cron.schedule("00 8 * * *", () => {
   fetchDailyEventsAndSendEmails();
 });
 
-cron.schedule("* * * * *", () => {
+cron.schedule("30 7 * * Sun", () => {
   console.log("Running weekly cron job to check events and send emails.");
   fetchWeeklyEventsAndSendEmails();
 });
