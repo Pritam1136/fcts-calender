@@ -6,7 +6,7 @@ import admin from "firebase-admin";
 import serviceAccount from "./fcts-calender.json" assert { type: "json" };
 
 const app = express();
-const port = 5000;
+const port = 5001;
 
 dotenv.config();
 app.use(express.json());
@@ -92,35 +92,37 @@ async function fetchDailyEventsAndSendEmails() {
 
     if (Array.isArray(selectedUser) && selectedUser.length > 0) {
       for (let userRef of selectedUser) {
-        if (typeof userRef === "string") {
-          const userId = userRef.split("/")[2];
-          if (!userId) {
-            if (typeof userRef === "object") {
-              console.error(
-                "Invalid user reference:",
-                JSON.stringify(userRef, null, 2)
-              );
-            } else {
-              console.error("Invalid user reference type:", typeof userRef);
-            }
-            continue;
-          }
-          const userDoc = await db.collection("Users").doc(userId).get();
-          const userData = userDoc.exists ? userDoc.data() : null;
+        let userId;
 
-          if (userData && userData.email) {
-            const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
-            await sendEmail(
-              userData.email,
-              `Event Notification - ${name}`,
-              emailContent
-            );
-            console.log(`Email sent to selected user: ${userData.email}`);
-          } else {
-            console.error("Selected user not found or invalid.");
-          }
+        // Handle DocumentReference objects
+        if (userRef instanceof admin.firestore.DocumentReference) {
+          userId = userRef.id; // Get the ID directly from DocumentReference
+        } else if (typeof userRef === "string") {
+          userId = userRef.split("/").pop(); // Handle string case
         } else {
           console.error("Invalid user reference type:", typeof userRef);
+          continue;
+        }
+
+        if (!userId) {
+          console.error("Invalid user reference:", userRef);
+          continue;
+        }
+
+        // Fetch user data based on userId
+        const userDoc = await db.collection("Users").doc(userId).get();
+        const userData = userDoc.exists ? userDoc.data() : null;
+
+        if (userData && userData.email) {
+          const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
+          await sendEmail(
+            userData.email,
+            `Event Notification - ${name}`,
+            emailContent
+          );
+          console.log(`Email sent to selected user: ${userData.email}`);
+        } else {
+          console.error("Selected user not found or invalid.");
         }
       }
     } else {
