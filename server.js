@@ -155,6 +155,7 @@ async function fetchWeeklyEventsAndSendEmails() {
     const eventData = eventDoc.data();
     const { type, name, startDate, endDate, selectedUser } = eventData;
 
+    // Check if the event is happening this week
     if (!isEventThisWeek(startDate)) {
       console.log(`Skipping event: ${name}, not happening this week.`);
       continue;
@@ -162,33 +163,40 @@ async function fetchWeeklyEventsAndSendEmails() {
 
     let eventTypeDoc;
 
-    if (type && typeof type === "string") {
-      const typeId = type?.id;
-
-      // Fetch the event type data
+    // Handle DocumentReference for type
+    if (type instanceof admin.firestore.DocumentReference) {
+      eventTypeDoc = await type.get(); // Fetch the event type data using DocumentReference
+    } else if (typeof type === "string") {
+      const typeId = type; // In case type is already a string ID
       eventTypeDoc = await db.collection("EventTypes").doc(typeId).get();
     } else {
       console.error("Invalid event type or reference:", type);
       continue;
     }
 
-    const eventTypeData = eventTypeDoc.exists() ? eventTypeDoc.data() : {};
+    const eventTypeData = eventTypeDoc.exists ? eventTypeDoc.data() : {};
 
-    if (selectedUser.length > 0) {
-      console.log("searched for selected");
+    // Handle selected users if available
+    if (Array.isArray(selectedUser) && selectedUser.length > 0) {
       for (let userRef of selectedUser) {
-        const userId = userRef.split("/");
+        let userId;
 
-        if (!userId) {
-          console.error("Invalid user ID:", userRef);
+        // Handle user reference if it's a path (string) or DocumentReference
+        if (typeof userRef === "string") {
+          userId = userRef.split("/").pop(); // Extract the ID from the path
+        } else if (userRef instanceof admin.firestore.DocumentReference) {
+          userId = userRef.id; // Extract the ID from DocumentReference
+        } else {
+          console.error("Invalid user reference:", userRef);
           continue;
         }
 
+        // Fetch the user data based on userId
         const userDoc = await db.collection("Users").doc(userId).get();
         const userData = userDoc.exists ? userDoc.data() : null;
 
         if (userData && userData.email) {
-          const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
+          const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
           await sendEmail(
             userData.email,
             `Event Notification - ${name}`,
@@ -199,16 +207,35 @@ async function fetchWeeklyEventsAndSendEmails() {
           console.error("Selected user not found or invalid.");
         }
       }
+    } else {
+      // Send email to all users if no specific users are selected
+      const usersSnapshot = await db.collection("Users").get();
+      const usersToEmail = usersSnapshot.docs
+        .map((userDoc) => {
+          const userData = userDoc.data();
+          return { email: userData.email, name: userData.name };
+        })
+        .filter((user) => !!user.email);
+
+      const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
+
+      for (const user of usersToEmail) {
+        await sendEmail(
+          user.email,
+          `Event Notification - ${name}`,
+          emailContent
+        );
+      }
     }
   }
 }
 
-cron.schedule("* * * * *", () => {
+cron.schedule("00 8 * * *", () => {
   console.log("Running daily cron job to check events and send emails.");
   fetchDailyEventsAndSendEmails();
 });
 
-cron.schedule("30 7 * * sun", () => {
+cron.schedule("* * * * *", () => {
   console.log("Running weekly cron job to check events and send emails.");
   fetchWeeklyEventsAndSendEmails();
 });
