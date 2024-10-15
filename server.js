@@ -1,7 +1,6 @@
 import express from "express";
 import cron from "node-cron";
 import dotenv from "dotenv";
-import router from "./routes/index.js";
 import {
   fetchDailyEventsAndSendEmails,
   fetchWeeklyEventsAndSendEmails,
@@ -13,7 +12,6 @@ const app = express();
 const port = 5001;
 
 app.use(express.json());
-app.use("/", router);
 
 cron.schedule("00 8 * * *", () => {
   console.log("Running daily cron job to check events and send emails.");
