@@ -67,6 +67,12 @@ function isEventThisWeek(startDate) {
   return eventDate >= today && eventDate <= oneWeekFromNow;
 }
 
+function dates(startDate, endDate) {
+  const newStartDate = new Date(startDate._seconds * 1000).toISOString();
+  const newEndDate = new Date(endDate._seconds * 1000).toISOString();
+  return { newStartDate, newEndDate };
+}
+
 async function fetchDailyEventsAndSendEmails() {
   const eventsSnapshot = await db.collection("Events").get();
 
@@ -93,16 +99,7 @@ async function fetchDailyEventsAndSendEmails() {
     if (Array.isArray(selectedUser) && selectedUser.length > 0) {
       for (let userRef of selectedUser) {
         let userId;
-
-        // Handle DocumentReference objects
-        if (userRef instanceof admin.firestore.DocumentReference) {
-          userId = userRef.id; // Get the ID directly from DocumentReference
-        } else if (typeof userRef === "string") {
-          userId = userRef.split("/").pop(); // Handle string case
-        } else {
-          console.error("Invalid user reference type:", typeof userRef);
-          continue;
-        }
+        userId = userRef.id;
 
         if (!userId) {
           console.error("Invalid user reference:", userRef);
@@ -114,7 +111,8 @@ async function fetchDailyEventsAndSendEmails() {
         const userData = userDoc.exists ? userDoc.data() : null;
 
         if (userData && userData.email) {
-          const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
+          const { newStartDate, newEndDate } = dates(startDate, endDate);
+          const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${newStartDate}\nEnd Date: ${newEndDate}`;
           await sendEmail(
             userData.email,
             `Event Notification - ${name}`,
@@ -180,13 +178,9 @@ async function fetchWeeklyEventsAndSendEmails() {
     if (Array.isArray(selectedUser) && selectedUser.length > 0) {
       for (let userRef of selectedUser) {
         let userId;
+        userId = userRef.id;
 
-        // Handle user reference if it's a path (string) or DocumentReference
-        if (typeof userRef === "string") {
-          userId = userRef.split("/").pop(); // Extract the ID from the path
-        } else if (userRef instanceof admin.firestore.DocumentReference) {
-          userId = userRef.id; // Extract the ID from DocumentReference
-        } else {
+        if (!userId) {
           console.error("Invalid user reference:", userRef);
           continue;
         }
@@ -196,7 +190,8 @@ async function fetchWeeklyEventsAndSendEmails() {
         const userData = userDoc.exists ? userDoc.data() : null;
 
         if (userData && userData.email) {
-          const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${startDate}\nEnd Date: ${endDate}`;
+          const { newStartDate, newEndDate } = dates(startDate, endDate);
+          const emailContent = `Event: ${name}\nEvent Type: ${eventTypeData.name}\nStart Date: ${newStartDate}\nEnd Date: ${newEndDate}`;
           await sendEmail(
             userData.email,
             `Event Notification - ${name}`,
