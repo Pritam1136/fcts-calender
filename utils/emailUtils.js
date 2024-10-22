@@ -1,11 +1,11 @@
 import transporter from "../config/nodemailerConfig.js";
 
-export async function sendEmail(to, subject, text) {
+export async function sendEmail(to, subject, htmlContent) {
   const mailOptions = {
     from: process.env.EMAIL_USERNAME,
     to: to,
     subject: subject,
-    text: text,
+    html: htmlContent,
   };
 
   try {
