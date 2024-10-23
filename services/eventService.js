@@ -1,32 +1,34 @@
-import db, { admin } from "../config/firebaseConfig.js"; // Import admin
+import db, { admin } from "../config/firebaseConfig.js";
 import { sendEmail } from "../utils/emailUtils.js";
 import { isEventTomorrow, isEventThisWeek, dates } from "../utils/dateUtils.js";
 
-function emailContent(name, eventType, startDate, endDate) {
+function emailContent(name, eventType, startDate, _endDate) {
+  const imageSrc =
+    "https://media.licdn.com/dms/image/v2/C4D0BAQH6fJz1s57_eA/company-logo_200_200/company-logo_200_200/0/1630509348990/forwardcode_techstudio_logo?e=1736985600&v=beta&t=nlMSUu3V4zzN6zA9rlbOjdJE7IdnugYYZniJ09UTlNo";
   return `
   <body style="background-color: aliceblue; font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0;">
     <table align="center" cellpadding="0" cellspacing="0" style="max-width: 800px; width: 100%; margin: 3rem auto; background-color: aliceblue;">
       <tr>
         <td align="center" style="padding: 1rem;">
-          <img src="https://media.licdn.com/dms/image/v2/C4D0BAQH6fJz1s57_eA/company-logo_200_200/company-logo_200_200/0/1630509348990/forwardcode_techstudio_logo?e=1736985600&v=beta&t=nlMSUu3V4zzN6zA9rlbOjdJE7IdnugYYZniJ09UTlNo" 
-            alt="logo" style="width: 90px; height: 90px; background-color: white; border-radius: 50%; margin-bottom: 1rem;">
-          <p style="font-size: 1.6rem; margin: 2px; text-align: center;">Hi <strong>${name},</strong></p>
-          <p style="font-size: 1.6rem; margin: 2px; text-align: center;">EventType - ${eventType}</p>
+        <img src=${imageSrc ? imageSrc : null}
+        alt="logo" style="width: 90px; height: 90px; background-color: white; border-radius: 50%; margin-bottom: 1rem;">
+        <p style="font-size: 1.6rem; margin: 2px; text-align: center;">Hi <strong>${name},</strong></p>
+        <p style="font-size: 1.6rem; margin: 2px; text-align: center;">Event - ${eventType}</p>
         </td>
       </tr>
       <tr>
-        <td align="start" style="background-color: #ffffff; border-radius: 1rem; padding: 2rem 5rem; margin: 1.5rem 0;">
-          <p style="font-size: 13px; color: #5e5e5e; text-align: start; margin: 1rem 0 0;">Here is more information about the event:</p><br/>
-          <ol>
-            <li style="font-size: 13px; color: #5e5e5e; text-align: start; margin: 1rem 0 0;">Start Date - ${startDate.slice(
-              0,
-              10
-            )}</li>
-            <li style="font-size: 13px; color: #5e5e5e; text-align: start; margin: 1rem 0 0;">End Date - ${endDate.slice(
-              0,
-              10
-            )}</li>
-          </ol>
+        <td align="start" style="background-color: #ffffff; border-radius: 1rem; padding: 1rem 2rem; margin: 1.5rem 0;">
+          <p style="font-size: 13px; color: #5e5e5e; text-align: start; margin: 1rem 0 0;">
+            We are excited to inform you about an upcoming event: <strong>${eventType}</strong> scheduled for 
+            <strong>${startDate.slice(0, 10)}</strong>.
+          </p><br/>
+         <p style="font-size: 13px; color: #5e5e5e;">
+            This event will be a great opportunity to engage with your peers. 
+            We encourage you to mark your calendar and prepare for a meaningful experience.
+          </p>
+          <p style="font-size: 13px; color: #5e5e5e;">
+            If you have any questions or suggestions, feel free to reach out to us. We look forward to your participation!
+          </p>
         </td>
       </tr>
       <tr style="padding: 1rem;" align="start">
