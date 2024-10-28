@@ -21,7 +21,8 @@ function emailContent(name, events) {
         <td style="padding: 0.5rem; border-bottom: 1px solid #ddd;">${event.eventType}</td>
         <td style="padding: 0.5rem; border-bottom: 1px solid #ddd;">${formattedStartDate}</td>
         <td style="padding: 0.5rem; border-bottom: 1px solid #ddd;">${formattedEndDate}</td>
-      </tr>`;
+      </tr>
+      `;
     })
     .join("");
 
