@@ -2,6 +2,23 @@ import db, { admin } from "../config/firebaseConfig.js";
 import { sendEmail } from "../utils/emailUtils.js";
 import { isEventTomorrow, isEventThisWeek, dates } from "../utils/dateUtils.js";
 
+function birthdayEmailContent(name) {
+  return `
+  <body style="background-color: #fef3e0; font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0;">
+    <table align="center" cellpadding="0" cellspacing="0" style="max-width: 800px; width: 100%; margin: 3rem auto; background-color: #fff;">
+      <tr>
+        <td align="center" style="padding: 2rem;">
+          <h2 style="color: #ff6347;">Happy Birthday, ${name}!</h2>
+          <p style="font-size: 1.2rem; color: #333;">Wishing you a fantastic day filled with joy and celebration.</p>
+          <p style="font-size: 1rem; color: #555;">Enjoy your special day, and may this year bring you even more success and happiness.</p>
+          <img src="https://your-image-url.com/birthday.png" alt="Happy Birthday" style="width: 150px; margin-top: 1rem;">
+        </td>
+      </tr>
+    </table>
+  </body>
+  `;
+}
+
 function emailContent(name, events) {
   const imageSrc =
     "https://media.licdn.com/dms/image/v2/C4D0BAQH6fJz1s57_eA/company-logo_200_200/company-logo_200_200/0/1630509348990/forwardcode_techstudio_logo?e=1736985600&v=beta&t=nlMSUu3V4zzN6zA9rlbOjdJE7IdnugYYZniJ09UTlNo";
@@ -127,11 +144,20 @@ export async function fetchDailyEventsAndSendEmails() {
   }
 
   for (const [email, user] of usersEventsMap.entries()) {
-    await sendEmail(
-      email,
-      "Tomorrow's Events Notification",
-      emailContent(user.name, user.events)
-    );
+    user.events.forEach(async (event) => {
+      const emailBody =
+        event.eventType === "Birthday"
+          ? birthdayEmailContent(user.name)
+          : emailContent(user.name, user.events);
+
+      await sendEmail(
+        email,
+        event.eventType === "Birthday"
+          ? "Happy Birthday!"
+          : "Tomorrow's Events Notification",
+        emailBody
+      );
+    });
   }
 }
 
@@ -211,11 +237,20 @@ export async function fetchWeeklyEventsAndSendEmails() {
   // Send emails
   for (const [userId, { name, email, events }] of usersEventsMap) {
     if (events.length > 0) {
-      await sendEmail(
-        email,
-        "Upcoming Events This Week",
-        emailContent(name, events)
-      );
+      events.forEach(async (event) => {
+        const emailBody =
+          event.eventType === "Birthday"
+            ? birthdayEmailContent(name)
+            : emailContent(name, events);
+
+        await sendEmail(
+          email,
+          event.eventType === "Birthday"
+            ? "Happy Birthday!"
+            : "Upcoming Events This Week",
+          emailBody
+        );
+      });
     }
   }
 }
