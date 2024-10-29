@@ -20,8 +20,3 @@ export function isEventThisWeek(startDate) {
   return eventDate >= today && eventDate <= oneWeekFromNow;
 }
 
-export function dates(startDate, endDate) {
-  const newStartDate = new Date(startDate._seconds * 1000).toISOString();
-  const newEndDate = new Date(endDate._seconds * 1000).toISOString();
-  return { newStartDate, newEndDate };
-}

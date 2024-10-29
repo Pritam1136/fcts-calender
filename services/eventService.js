@@ -1,6 +1,6 @@
 import db, { admin } from "../config/firebaseConfig.js";
 import { sendEmail } from "../utils/emailUtils.js";
-import { isEventTomorrow, isEventThisWeek, dates } from "../utils/dateUtils.js";
+import { isEventTomorrow, isEventThisWeek } from "../utils/dateUtils.js";
 
 function birthdayEmailContent(name) {
   return `
@@ -11,7 +11,7 @@ function birthdayEmailContent(name) {
           <h2 style="color: #ff6347;">Happy Birthday, ${name}!</h2>
           <p style="font-size: 1.2rem; color: #333;">Wishing you a fantastic day filled with joy and celebration.</p>
           <p style="font-size: 1rem; color: #555;">Enjoy your special day, and may this year bring you even more success and happiness.</p>
-          <img src="https://your-image-url.com/birthday.png" alt="Happy Birthday" style="width: 150px; margin-top: 1rem;">
+          <img src="" alt="Happy Birthday" style="width: 150px; margin-top: 1rem;">
         </td>
       </tr>
     </table>
