@@ -90,7 +90,10 @@ export async function fetchDailyEventsAndSendEmails() {
     const eventData = eventDoc.data();
     const { type, name, startDate, endDate, selectedUser } = eventData;
 
-    if (!isEventTomorrow(startDate)) continue;
+    if (!isEventTomorrow(startDate)) {
+      console.log(`event ${name} is not happening tomorrow.`);
+      continue;
+    }
 
     let eventTypeDoc;
     if (type instanceof admin.firestore.DocumentReference) {
