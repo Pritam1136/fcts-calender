@@ -19,4 +19,3 @@ export function isEventThisWeek(startDate) {
 
   return eventDate >= today && eventDate <= oneWeekFromNow;
 }
-
