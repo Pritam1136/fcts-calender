@@ -9,7 +9,7 @@ import {
 dotenv.config();
 
 const app = express();
-const port = 5001;
+const port = 5001 || process.env.PORT;
 
 app.use(express.json());
 
@@ -24,5 +24,5 @@ cron.schedule("00 8 * * Mon", () => {
 });
 
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`Server running on port http://localhost:${port}`);
 });
