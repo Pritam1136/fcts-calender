@@ -52,8 +52,7 @@ function birthdayEmailContent(name) {
                 <p style="font-size: 12px; color: black">
                   Check what's new:
                     <a href="https://forwardcode.in" style="color: #007bff"
-                    >https://forwardcode.in</a
-                    >
+                    >https://forwardcode.in</a>
                 </p>
               </td>
             </tr>
