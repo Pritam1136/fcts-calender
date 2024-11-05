@@ -3,6 +3,8 @@ import { sendEmail } from "../utils/emailUtils.js";
 import { isEventTomorrow, isEventThisWeek } from "../utils/dateUtils.js";
 
 function birthdayEmailContent(name) {
+  const imageSrc =
+    "https://media.licdn.com/dms/image/v2/C4D0BAQH6fJz1s57_eA/company-logo_200_200/company-logo_200_200/0/1630509348990/forwardcode_techstudio_logo?e=1736985600&v=beta&t=nlMSUu3V4zzN6zA9rlbOjdJE7IdnugYYZniJ09UTlNo";
   return `
   <body style="background-color: #fef3e0; font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0;">
     <table align="center" cellpadding="0" cellspacing="0" style="max-width: 800px; width: 100%; margin: 3rem auto; background-color: #fff;">
@@ -12,6 +14,48 @@ function birthdayEmailContent(name) {
           <p style="font-size: 1.2rem; color: #333;">Wishing you a fantastic day filled with joy and celebration.</p>
           <p style="font-size: 1rem; color: #555;">Enjoy your special day, and may this year bring you even more success and happiness.</p>
           <img src="https://static.vecteezy.com/system/resources/previews/015/323/886/original/colorful-happy-birthday-background-with-balloons-and-confetti-suitable-for-greeting-card-poster-social-media-post-etc-illustration-vector.jpg" alt="Happy Birthday" style="width: 80%; margin-top: 1rem;">
+        </td>
+      </tr>
+      <tr style="text-align: center">
+        <td style="padding: 1rem 5rem">
+          <table style="text-align: start">
+            <tr>
+              <td style="padding-right: 1rem">
+                <img
+                src="${imageSrc}"
+                alt="Forwardcode TechStudio"
+                style="
+                width: 90px;
+                height: 90px;
+                background-color: white;
+                margin-bottom: 1rem;
+                "
+                />
+              </td>
+              <td>
+                <p
+                style="font-size: 14px; font-weight: bold; color: #333"
+                >
+                  TEAM HR
+                </p>
+                <p style="font-size: 12px; color: #5e5e5e">
+                  Forwardcode TechStudio
+                </p>
+                <p style="font-size: 12px; color: #5e5e5e">
+                  Jamshedpur, JH - 831018
+                </p>
+                <p style="font-size: 12px">
+                  hrforwardcode.in
+                </p>
+                <p style="font-size: 12px; color: black">
+                  Check what's new:
+                  <a href="https://forwardcode.in" style="color: #007bff"
+                  >https://forwardcode.in</a
+                  >
+                </p>
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>
