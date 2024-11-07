@@ -1,21 +1,17 @@
-export function isEventTomorrow(startDate) {
+export function isEventToday(startDate, today) {
   const eventDate = startDate.toDate ? startDate.toDate() : new Date(startDate);
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
 
+  // Check if the event is today
   return (
-    eventDate.getDate() === tomorrow.getDate() &&
-    eventDate.getMonth() === tomorrow.getMonth() &&
-    eventDate.getFullYear() === tomorrow.getFullYear()
+    eventDate.getDate() === today.getDate() &&
+    eventDate.getMonth() === today.getMonth() &&
+    eventDate.getFullYear() === today.getFullYear()
   );
 }
 
-export function isEventThisWeek(startDate) {
+export function isEventThisWeek(startDate, startOfWeek, endOfWeek) {
   const eventDate = startDate.toDate ? startDate.toDate() : new Date(startDate);
-  const today = new Date();
-  const oneWeekFromNow = new Date();
-  oneWeekFromNow.setDate(today.getDate() + 7);
 
-  return eventDate >= today && eventDate <= oneWeekFromNow;
+  // Check if the event is happening between the start and end of the current week
+  return eventDate >= startOfWeek && eventDate <= endOfWeek;
 }

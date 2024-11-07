@@ -1,70 +1,8 @@
 import db, { admin } from "../config/firebaseConfig.js";
 import { sendEmail } from "../utils/emailUtils.js";
-import { isEventTomorrow, isEventThisWeek } from "../utils/dateUtils.js";
+import { isEventToday, isEventThisWeek } from "../utils/dateUtils.js";
 
-function birthdayEmailContent(name) {
-  const imageSrc =
-    "https://media.licdn.com/dms/image/v2/C4D0BAQH6fJz1s57_eA/company-logo_200_200/company-logo_200_200/0/1630509348990/forwardcode_techstudio_logo?e=1736985600&v=beta&t=nlMSUu3V4zzN6zA9rlbOjdJE7IdnugYYZniJ09UTlNo";
-  return `
-  <body style="background-color: #fef3e0; font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0;">
-    <table align="center" cellpadding="0" cellspacing="0" style="max-width: 800px; width: 100%; margin: 3rem auto; background-color: #fff;">
-      <tr>
-        <td align="center" style="padding: 2rem;">
-          <h2 style="color: #ff6347;">Happy Birthday, ${name}!</h2>
-          <p style="font-size: 1.2rem; color: #333;">Wishing you a fantastic day filled with joy and celebration.</p>
-          <p style="font-size: 1rem; color: #555;">Enjoy your special day, and may this year bring you even more success and happiness.</p>
-          <img 
-          src="https://static.vecteezy.com/system/resources/previews/015/323/886/original/colorful-happy-birthday-background-with-balloons-and-confetti-suitable-for-greeting-card-poster-social-media-post-etc-illustration-vector.jpg" 
-          alt="Happy Birthday" style="width: 80%; margin-top: 1rem;">
-        </td>
-      </tr>
-      <tr style="text-align: center">
-        <td style="padding: 1rem 5rem">
-          <table style="text-align: start">
-            <tr>
-              <td style="padding-right: 1rem">
-                <img
-                src="${imageSrc}"
-                alt="Forwardcode TechStudio"
-                style="
-                width: 90px;
-                height: 90px;
-                background-color: white;
-                margin-bottom: 1rem;
-                "
-                />
-              </td>
-              <td>
-                <p
-                style="font-size: 14px; font-weight: bold; color: #333"
-                >
-                  TEAM HR
-                </p>
-                <p style="font-size: 12px; color: #5e5e5e">
-                  Forwardcode TechStudio
-                </p>
-                <p style="font-size: 12px; color: #5e5e5e">
-                  Jamshedpur, JH - 831018
-                </p>
-                <p style="font-size: 12px">
-                  hrforwardcode.in
-                </p>
-                <p style="font-size: 12px; color: black">
-                  Check what's new:
-                    <a href="https://forwardcode.in" style="color: #007bff"
-                    >https://forwardcode.in</a>
-                </p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-  `;
-}
-
-function emailContent(name, events) {
+function emailContent(name, events, timeFrame) {
   const imageSrc =
     "https://media.licdn.com/dms/image/v2/C4D0BAQH6fJz1s57_eA/company-logo_200_200/company-logo_200_200/0/1630509348990/forwardcode_techstudio_logo?e=1736985600&v=beta&t=nlMSUu3V4zzN6zA9rlbOjdJE7IdnugYYZniJ09UTlNo";
 
@@ -77,16 +15,33 @@ function emailContent(name, events) {
       const formattedEndDate = new Date(
         event.endDate.toDate()
       ).toLocaleDateString("en-IN");
+
+      // Conditionally include date columns based on timeFrame
+      const startDateColumn =
+        timeFrame !== "today"
+          ? `<td style="padding: 0.5rem; border-bottom: 1px solid #ddd;">${formattedStartDate}</td>`
+          : "";
+      const endDateColumn =
+        timeFrame !== "today"
+          ? `<td style="padding: 0.5rem; border-bottom: 1px solid #ddd;">${formattedEndDate}</td>`
+          : "";
+
       return `
       <tr>
         <td style="padding: 0.5rem; border-bottom: 1px solid #ddd;">${event.name}</td>
         <td style="padding: 0.5rem; border-bottom: 1px solid #ddd;">${event.eventType}</td>
-        <td style="padding: 0.5rem; border-bottom: 1px solid #ddd;">${formattedStartDate}</td>
-        <td style="padding: 0.5rem; border-bottom: 1px solid #ddd;">${formattedEndDate}</td>
+        ${startDateColumn}
+        ${endDateColumn}
       </tr>
       `;
     })
     .join("");
+
+  // Dynamic message based on the timeFrame
+  const timeFrameMessage =
+    timeFrame === "today"
+      ? "Here is a list of events scheduled for today:"
+      : "Here is a list of events scheduled for this week:";
 
   return `
   <body style="background-color: aliceblue; font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0;">
@@ -95,25 +50,31 @@ function emailContent(name, events) {
         <td align="center" style="padding: 1rem;">
           <img src="${imageSrc}" alt="logo" style="width: 90px; height: 90px; background-color: white; border-radius: 50%; margin-bottom: 1rem;">
           <p style="font-size: 1.6rem; margin: 2px; text-align: center;">Hi <strong>${name},</strong></p>
-          <p style="font-size: 1.6rem; margin: 2px; text-align: center;">Upcoming Events - Save the dates</p>
         </td>
       </tr>
       <tr>
         <td style="background-color: #ffffff; border-radius: 1rem; padding: 1rem 2rem; margin: 1.5rem 0;">
           <p style="font-size: 13px; color: #5e5e5e; margin: 1rem 0;">Dear ${name},</p>
-          <p style="font-size: 13px; color: #5e5e5e; margin: 1rem 0;">Here is a list of events scheduled for tomorrow:</p>
+          <p style="font-size: 13px; color: #5e5e5e; margin: 1rem 0;">${timeFrameMessage}</p>
           <table width="100%" style="border-collapse: collapse; margin-top: 1rem;">
             <thead>
               <tr>
                 <th style="padding: 0.5rem; background-color: #007bff; color: #ffffff;">Event Name</th>
                 <th style="padding: 0.5rem; background-color: #007bff; color: #ffffff;">Event Type</th>
-                <th style="padding: 0.5rem; background-color: #007bff; color: #ffffff;">Start Date</th>
-                <th style="padding: 0.5rem; background-color: #007bff; color: #ffffff;">End Date</th>
+                ${
+                  timeFrame !== "today"
+                    ? `<th style="padding: 0.5rem; background-color: #007bff; color: #ffffff;">Start Date</th>`
+                    : ""
+                }
+                ${
+                  timeFrame !== "today"
+                    ? `<th style="padding: 0.5rem; background-color: #007bff; color: #ffffff;">End Date</th>`
+                    : ""
+                }
               </tr>
             </thead>
             <tbody>${eventRows}</tbody>
           </table>
-          <p style="font-size: 13px; color: #5e5e5e; margin-top: 1.5rem;">We look forward to seeing you at these events! Please reach out if you have any questions.</p>
         </td>
       </tr>
       <tr>
@@ -131,15 +92,20 @@ export async function fetchDailyEventsAndSendEmails() {
   const eventsSnapshot = await db.collection("Events").get();
   const usersEventsMap = new Map();
 
+  // Get today's date
+  const today = new Date();
+
   for (const eventDoc of eventsSnapshot.docs) {
     const eventData = eventDoc.data();
     const { type, name, startDate, endDate, selectedUser } = eventData;
 
-    if (!isEventTomorrow(startDate)) {
-      console.log(`event ${name} is not happening tomorrow.`);
+    // Check if the event is happening today
+    if (!isEventToday(startDate, today)) {
+      console.log(`Skipping event: ${name}, not happening today.`);
       continue;
     }
 
+    // Retrieve event type details
     let eventTypeDoc;
     if (type instanceof admin.firestore.DocumentReference) {
       eventTypeDoc = await type.get();
@@ -149,63 +115,61 @@ export async function fetchDailyEventsAndSendEmails() {
     }
 
     const eventTypeData = eventTypeDoc.exists ? eventTypeDoc.data() : {};
-    const eventInfo = {
+    const formattedEvent = {
       name,
-      eventType: eventTypeData.name,
+      eventType: eventTypeData.name || "N/A",
       startDate,
       endDate,
     };
 
+    // If selectedUser exists, add the event to each specific user’s event list
     if (Array.isArray(selectedUser) && selectedUser.length > 0) {
       for (let userRef of selectedUser) {
         const userId = userRef.id;
-        if (!userId) continue;
+        if (!userId) {
+          console.error("Invalid user reference:", userRef);
+          continue;
+        }
 
         const userDoc = await db.collection("Users").doc(userId).get();
         const userData = userDoc.exists ? userDoc.data() : null;
 
         if (userData && userData.email) {
-          if (!usersEventsMap.has(userData.email)) {
-            usersEventsMap.set(userData.email, {
+          if (!usersEventsMap.has(userId)) {
+            usersEventsMap.set(userId, {
               name: userData.name,
+              email: userData.email,
               events: [],
             });
           }
-          usersEventsMap.get(userData.email).events.push(eventInfo);
+          usersEventsMap.get(userId).events.push(formattedEvent);
         }
       }
     } else {
+      // Otherwise, add the event for all users
       const usersSnapshot = await db.collection("Users").get();
       usersSnapshot.docs.forEach((userDoc) => {
         const userData = userDoc.data();
-        if (userData.email) {
-          if (!usersEventsMap.has(userData.email)) {
-            usersEventsMap.set(userData.email, {
+        if (userData && userData.email) {
+          if (!usersEventsMap.has(userDoc.id)) {
+            usersEventsMap.set(userDoc.id, {
               name: userData.name,
+              email: userData.email,
               events: [],
             });
           }
-          usersEventsMap.get(userData.email).events.push(eventInfo);
+          usersEventsMap.get(userDoc.id).events.push(formattedEvent);
         }
       });
     }
   }
 
-  for (const [email, user] of usersEventsMap.entries()) {
-    user.events.forEach(async (event) => {
-      const emailBody =
-        event.eventType === "Birthday"
-          ? birthdayEmailContent(user.name)
-          : emailContent(user.name, user.events);
-
-      await sendEmail(
-        email,
-        event.eventType === "Birthday"
-          ? "Happy Birthday!"
-          : "Tomorrow's Events Notification",
-        emailBody
-      );
-    });
+  // Send emails
+  for (const [userId, { name, email, events }] of usersEventsMap) {
+    if (events.length > 0) {
+      const emailBody = emailContent(name, events, "today"); // Pass "today" for daily events
+      await sendEmail(email, "Today's Events", emailBody);
+    }
   }
 }
 
@@ -213,12 +177,19 @@ export async function fetchWeeklyEventsAndSendEmails() {
   const eventsSnapshot = await db.collection("Events").get();
   const usersEventsMap = new Map();
 
+  // Get the start and end of this week
+  const today = new Date();
+  const firstDayOfWeek = today.getDate() - today.getDay(); // Get the first day of the current week (Sunday)
+  const lastDayOfWeek = firstDayOfWeek + 6; // Get the last day of the current week (Saturday)
+  const startOfWeek = new Date(today.setDate(firstDayOfWeek));
+  const endOfWeek = new Date(today.setDate(lastDayOfWeek));
+
   for (const eventDoc of eventsSnapshot.docs) {
     const eventData = eventDoc.data();
     const { type, name, startDate, endDate, selectedUser } = eventData;
 
     // Check if the event is happening this week
-    if (!isEventThisWeek(startDate)) {
+    if (!isEventThisWeek(startDate, startOfWeek, endOfWeek)) {
       console.log(`Skipping event: ${name}, not happening this week.`);
       continue;
     }
@@ -285,20 +256,8 @@ export async function fetchWeeklyEventsAndSendEmails() {
   // Send emails
   for (const [userId, { name, email, events }] of usersEventsMap) {
     if (events.length > 0) {
-      events.forEach(async (event) => {
-        const emailBody =
-          event.eventType === "Birthday"
-            ? birthdayEmailContent(name)
-            : emailContent(name, events);
-
-        await sendEmail(
-          email,
-          event.eventType === "Birthday"
-            ? "Happy Birthday!"
-            : "Upcoming Events This Week",
-          emailBody
-        );
-      });
+      const emailBody = emailContent(name, events, "week"); // Pass "week" for weekly events
+      await sendEmail(email, "Upcoming Events This Week", emailBody);
     }
   }
 }
