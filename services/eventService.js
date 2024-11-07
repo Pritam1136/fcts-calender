@@ -73,10 +73,10 @@ function emailContent(name, events, timeFrame) {
                 }
               </tr>
             </thead>
-            <tbody>${eventRows}</tbody>
-          </table>
-        </td>
-      </tr>
+          <tbody>${eventRows}</tbody>
+        </table>
+      </td>
+    </tr>
       <tr>
         <td style="padding: 1rem;">
           <p style="font-size: 8px; margin: 0;">PLEASE CONSIDER THE ENVIRONMENT BEFORE PRINTING THIS EMAIL.</p>
@@ -167,7 +167,7 @@ export async function fetchDailyEventsAndSendEmails() {
   // Send emails
   for (const [userId, { name, email, events }] of usersEventsMap) {
     if (events.length > 0) {
-      const emailBody = emailContent(name, events, "today"); // Pass "today" for daily events
+      const emailBody = emailContent(name, events, "today");
       await sendEmail(email, "Today's Events", emailBody);
     }
   }
@@ -179,8 +179,8 @@ export async function fetchWeeklyEventsAndSendEmails() {
 
   // Get the start and end of this week
   const today = new Date();
-  const firstDayOfWeek = today.getDate() - today.getDay(); // Get the first day of the current week (Sunday)
-  const lastDayOfWeek = firstDayOfWeek + 6; // Get the last day of the current week (Saturday)
+  const firstDayOfWeek = today.getDate() - today.getDay();
+  const lastDayOfWeek = firstDayOfWeek + 6;
   const startOfWeek = new Date(today.setDate(firstDayOfWeek));
   const endOfWeek = new Date(today.setDate(lastDayOfWeek));
 
