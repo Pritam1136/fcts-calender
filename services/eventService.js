@@ -256,7 +256,7 @@ export async function fetchWeeklyEventsAndSendEmails() {
   // Send emails
   for (const [userId, { name, email, events }] of usersEventsMap) {
     if (events.length > 0) {
-      const emailBody = emailContent(name, events, "week"); // Pass "week" for weekly events
+      const emailBody = emailContent(name, events, "week");
       await sendEmail(email, "Upcoming Events This Week", emailBody);
     }
   }
