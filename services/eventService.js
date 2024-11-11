@@ -76,7 +76,7 @@ function emailContent(name, events, timeFrame) {
               <tbody>${eventRows}</tbody>
           </table>
         </td>
-    </tr>
+      </tr>
       <tr>
         <td style="padding: 1rem;">
           <p style="font-size: 8px; margin: 0;">PLEASE CONSIDER THE ENVIRONMENT BEFORE PRINTING THIS EMAIL.</p>
