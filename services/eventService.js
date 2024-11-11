@@ -165,7 +165,7 @@ export async function fetchDailyEventsAndSendEmails() {
   }
 
   // Send emails
-  for (const [userId, { name, email, events }] of usersEventsMap) {
+  for (const [_userId, { name, email, events }] of usersEventsMap) {
     if (events.length > 0) {
       const emailBody = emailContent(name, events, "today");
       await sendEmail(email, "Today's Events", emailBody);
