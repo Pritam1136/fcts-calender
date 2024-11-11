@@ -13,7 +13,7 @@ const port = 5001 || process.env.PORT;
 
 app.use(express.json());
 
-cron.schedule("00 8 * * *", () => {
+cron.schedule("25 15 * * *", () => {
   console.log("Running daily cron job to check events and send emails.");
   fetchDailyEventsAndSendEmails();
 });
