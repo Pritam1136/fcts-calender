@@ -73,9 +73,9 @@ function emailContent(name, events, timeFrame) {
                 }
               </tr>
             </thead>
-          <tbody>${eventRows}</tbody>
-        </table>
-      </td>
+              <tbody>${eventRows}</tbody>
+          </table>
+        </td>
     </tr>
       <tr>
         <td style="padding: 1rem;">
