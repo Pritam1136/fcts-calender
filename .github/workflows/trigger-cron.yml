@@ -12,9 +12,9 @@ jobs:
       - name: Trigger Daily Cron Job
         if: github.event.schedule == '0 8 * * *' # Runs only on the daily schedule
         run: |
-          curl -X GET https://your-app.onrender.com/run-daily-cron
+          curl -X GET https://fcts-calender.onrender.com/run-daily-cron
 
       - name: Trigger Weekly Cron Job
         if: github.event.schedule == '0 8 * * 1' # Runs only on the weekly schedule
         run: |
-          curl -X GET https://your-app.onrender.com/run-weekly-cron
+          curl -X GET https://fcts-calender.onrender.com/run-weekly-cron
