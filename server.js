@@ -9,16 +9,16 @@ import {
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT|| 5001;
+const port = process.env.PORT || 5001;
 
 app.use(express.json());
 
-cron.schedule("00 8 * * *", () => {
+app.get("/daily-events", () => {
   console.log("Running daily cron job to check events and send emails.");
   fetchDailyEventsAndSendEmails();
 });
 
-cron.schedule("00 8 * * Mon", () => {
+app.get("/weekly-events", () => {
   console.log("Running weekly cron job to check events and send emails.");
   fetchWeeklyEventsAndSendEmails();
 });
