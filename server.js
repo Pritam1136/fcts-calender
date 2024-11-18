@@ -1,4 +1,5 @@
 import express from "express";
+import cron from "node-cron";
 import dotenv from "dotenv";
 import {
   fetchDailyEventsAndSendEmails,
@@ -12,16 +13,14 @@ const port = process.env.PORT || 5001;
 
 app.use(express.json());
 
-app.get("/daily-events", (_req, res) => {
+cron.schedule("00 8 * * *", () => {
   console.log("Running daily cron job to check events and send emails.");
   fetchDailyEventsAndSendEmails();
-  res.json({ status: "sent" });
 });
 
-app.get("/weekly-events", (_req, res) => {
+cron.schedule("00 8 * * Mon", () => {
   console.log("Running weekly cron job to check events and send emails.");
   fetchWeeklyEventsAndSendEmails();
-  res.json({ status: "sent" });
 });
 
 app.listen(port, () => {
