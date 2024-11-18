@@ -1,0 +1,32 @@
+name: Run Cron Jobs
+
+on:
+  schedule:
+    # Schedule the workflow to run daily at 8:00 AM UTC
+    - cron: "0 8 * * *"
+    # Schedule the workflow to run weekly on Mondays at 8:00 AM UTC
+    - cron: "0 8 * * MON"
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+
+jobs:
+  run-cron:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18 # Specify your Node.js version
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run daily and weekly tasks
+        env: # Pass environment variables if needed
+          PORT: ${{ secrets.PORT }}
+          NODE_ENV: production
+        run: |
+          node index.js
