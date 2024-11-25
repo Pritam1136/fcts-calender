@@ -13,20 +13,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Check out the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Step 2: Set up Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18 # Specify your Node.js version
+          node-version: 18 # Use the Node.js version required by your project
 
+      # Step 3: Install project dependencies
       - name: Install dependencies
         run: npm install
 
-      - name: Run daily and weekly tasks
-        env: # Pass environment variables if needed
-          PORT: ${{ secrets.PORT }}
+      # Step 4: Run the Node.js application
+      - name: Run cron job
+        env:
+          PORT: ${{ secrets.PORT }} # Add PORT as a secret in your repository
           NODE_ENV: production
         run: |
-          node index.js
+          node server.js
