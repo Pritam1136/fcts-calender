@@ -3,7 +3,7 @@ name: Run Cron Jobs
 on:
   schedule:
     # Daily at 8:00 AM UTC
-    - cron: "0 17 * * *"
+    - cron: "0 8 * * *"
     # Weekly on Mondays at 8:00 AM UTC
     - cron: "0 8 * * MON"
   workflow_dispatch: # Allow manual execution
