@@ -3,7 +3,7 @@ name: Run Cron Jobs
 on:
   schedule:
     # Schedule the workflow to run daily at 8:00 AM UTC
-    - cron: "25 16 * * *"
+    - cron: "0 8 * * *"
     # Schedule the workflow to run weekly on Mondays at 8:00 AM UTC
     - cron: "0 8 * * MON"
   workflow_dispatch: # Allows manual trigger from GitHub Actions UI
