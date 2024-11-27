@@ -2,37 +2,41 @@ name: Run Cron Jobs
 
 on:
   schedule:
-    # Daily at 8:00 AM UTC
-    - cron: "0 8 * * *"
-    # Weekly on Mondays at 8:00 AM UTC
-    - cron: "0 8 * * MON"
+    - cron: "0 8 * * *" # Daily
+    - cron: "0 8 * * MON" # Weekly
   workflow_dispatch: # Allow manual execution
 
 jobs:
-  run-cron:
+  daily-task:
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Check out the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18 # Use your project's Node.js version
+          node-version: 16
 
-      # Step 3: Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # Step 4: Run daily task
       - name: Execute daily task
-        if: github.event.schedule == '0 8 * * *'
         run: node server.js --daily
 
-      # Step 5: Run weekly task
+  weekly-task:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
       - name: Execute weekly task
-        if: github.event.schedule == '0 8 * * MON'
         run: node server.js --weekly
